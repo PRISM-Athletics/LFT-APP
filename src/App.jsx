@@ -251,11 +251,11 @@ function App() {
     <div className="app">
       {/* Accent top bar */}
       <div className="top-accent" />
-
+      
       <header>
-        <div className="logo">IRON<span>LOG</span></div>
+        <div className="logo">LFT</div>
         <div className="header-rule" />
-       <p className="tagline">Lift · Track · Repeat</p>
+        <p className="tagline">Lift · Track · Repeat</p>
       </header>
 
       <div className="toolbar">
@@ -648,6 +648,10 @@ function App() {
           )}
         </div>
       )}
+    <footer className="brand-footer">
+        <div className="footer-rule" />
+        <p className="brand-stamp">PRISM <span>Athletics</span></p>
+      </footer>
     </div>
   )
 }
