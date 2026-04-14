@@ -55,9 +55,10 @@ body {
 header { text-align: center; margin-bottom: 24px; }
 
 .logo {
-  font-family: 'Bebas Neue', sans-serif;
+   font-family: 'Bebas Neue', sans-serif;
   font-size: 3rem;
   letter-spacing: 6px;
+  padding-left: 8px;
   color: var(--text);
   line-height: 1;
 }
@@ -68,6 +69,10 @@ header { text-align: center; margin-bottom: 24px; }
   height: 1px;
   background: var(--border-light);
   margin: 10px auto;
+  display: block;
+  position: relative;
+  left: 0;
+  right: 0;
 }
 
 .tagline {
@@ -372,21 +377,18 @@ header { text-align: center; margin-bottom: 24px; }
 
 .workout-actions-row .clear-btn:hover { color: var(--danger); border-color: var(--danger); }
 
-.workout-actions-row .save-btn {
-  flex: 2;
-  padding: 10px;
+.workout-actions-row .clear-btn {
+  padding: 8px 16px;
   font-family: 'Outfit', sans-serif;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #000;
-  background: var(--accent);
-  border: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s;
 }
-
-.workout-actions-row .save-btn:hover { opacity: 0.85; }
 
 /* ============ EXERCISE CARD ============ */
 .workout-log { display: flex; flex-direction: column; gap: 10px; }
@@ -447,11 +449,20 @@ header { text-align: center; margin-bottom: 24px; }
 
 .set-grid-header {
   display: grid;
-  grid-template-columns: 32px 1fr 1fr;
+  grid-template-columns: 32px 1fr 1fr 0px;
   gap: 6px;
   padding: 0 2px 4px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 4px;
+}
+
+.pr-badge {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  text-align: center;
+  animation: fadeUp 0.3s ease both;
 }
 
 .sg-corner { font-size: 0.5rem; font-weight: 700; letter-spacing: 1.5px; color: var(--text-muted); text-align: center; }
@@ -459,7 +470,7 @@ header { text-align: center; margin-bottom: 24px; }
 
 .set-row {
   display: grid;
-  grid-template-columns: 32px 1fr 1fr;
+  grid-template-columns: 32px 1fr 1fr 0px;
   gap: 6px;
   align-items: center;
   padding: 4px 2px;
@@ -479,6 +490,17 @@ header { text-align: center; margin-bottom: 24px; }
 
 .set-row.filled .set-num { color: var(--progress); }
 
+.set-row.filled .set-num { color: var(--progress); }
+
+.set-row.pr {
+  grid-template-columns: 32px 1fr 1fr 28px;
+  background: var(--accent-dim);
+}
+
+.set-row.pr .set-num {
+  color: var(--accent);
+}
+
 .set-row input {
   width: 100%;
   padding: 9px 6px;
@@ -496,6 +518,50 @@ header { text-align: center; margin-bottom: 24px; }
 
 .set-row input:focus { border-color: var(--text-dim); }
 .set-row input::placeholder { color: var(--text-muted); font-family: 'Outfit', sans-serif; font-size: 0.8rem; }
+
+.set-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.set-ctrl-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.set-ctrl-btn:hover:not(:disabled) {
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+.set-ctrl-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.set-ctrl-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  min-width: 40px;
+  text-align: center;
+}
 
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -520,6 +586,26 @@ input[type='number'] { -moz-appearance: textfield; }
 .notes-input::placeholder { color: var(--text-muted); }
 .notes-input:focus { border-color: var(--text-dim); color: var(--text); }
 
+.save-workout-btn {
+  width: 100%;
+  padding: 16px;
+  margin-top: 16px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #000;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.save-workout-btn:hover {
+  opacity: 0.85;
+}
+
 /* ============ EMPTY STATE ============ */
 .empty-state { text-align: center; padding: 60px 20px; }
 
@@ -532,6 +618,17 @@ input[type='number'] { -moz-appearance: textfield; }
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.empty-icon-wrap:hover {
+  border-color: var(--text-muted);
+}
+
+.empty-icon-wrap:hover .empty-plus {
+  color: var(--text-dim);
 }
 
 .empty-plus { font-size: 1.4rem; color: var(--text-muted); }

@@ -58,6 +58,30 @@ function formatTime(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+function getLastWeights(exerciseName, pastWorkouts) {
+  for (const w of pastWorkouts) {
+    const match = w.exercises.find((ex) => ex.name === exerciseName)
+    if (match && match.sets) {
+      return match.sets.map((s) => s.weight || '')
+    }
+  }
+  return null
+}
+
+function getExercisePR(exerciseName, pastWorkouts) {
+  let best = 0
+  for (const w of pastWorkouts) {
+    const match = w.exercises.find((ex) => ex.name === exerciseName)
+    if (match && match.sets) {
+      for (const s of match.sets) {
+        const load = (Number(s.weight) || 0) * (Number(s.reps) || 0)
+        if (load > best) best = load
+      }
+    }
+  }
+  return best
+}
+
 function App() {
   const [sets, setSets] = useState(3)
   const [workout, setWorkout] = useState([])
@@ -169,16 +193,31 @@ function App() {
   const tplFiltered = filterExercises(tplSearch, tplGroup)
   const tplGroupedFiltered = groupResults(tplFiltered, false)
 
-  function selectExercise(name) {
-    setWorkout([...workout, { name, sets: Array.from({ length: sets }, () => ({ weight: '', reps: '' })), notes: '' }])
+function selectExercise(name) {
+    const prevWeights = getLastWeights(name, pastWorkouts)
+    const newSets = Array.from({ length: sets }, (_, i) => ({
+      weight: prevWeights && prevWeights[i] !== undefined ? prevWeights[i] : '',
+      reps: '',
+    }))
+    setWorkout([...workout, { name, sets: newSets, notes: '' }])
     closePicker()
   }
 
   function closePicker() { setPickerOpen(false); setSearchQuery(''); setActiveGroup(null); setShowCustom(false); setCustomName(''); setSets(3) }
   function addCustom() { if (!customName.trim()) return; selectExercise(customName.trim()) }
 
-  function loadTemplate(template) {
-    const exercises = template.exercises.map((ex) => ({ name: ex.name, sets: Array.from({ length: ex.sets }, () => ({ weight: '', reps: '' })), notes: '' }))
+ function loadTemplate(template) {
+    const exercises = template.exercises.map((ex) => {
+      const prevWeights = getLastWeights(ex.name, pastWorkouts)
+      return {
+        name: ex.name,
+        sets: Array.from({ length: ex.sets }, (_, i) => ({
+          weight: prevWeights && prevWeights[i] !== undefined ? prevWeights[i] : '',
+          reps: '',
+        })),
+        notes: '',
+      }
+    })
     setWorkout([...workout, ...exercises])
     setTemplatePickerOpen(false)
   }
@@ -191,7 +230,23 @@ function App() {
 
   function updateSet(exIdx, setIdx, field, value) { const updated = [...workout]; updated[exIdx].sets[setIdx][field] = value; setWorkout(updated) }
   function updateNotes(exIdx, value) { const updated = [...workout]; updated[exIdx].notes = value; setWorkout(updated) }
-  function removeExercise(index) { setWorkout(workout.filter((_, i) => i !== index)) }
+  function removeExercise(index) {
+    setWorkout(workout.filter((_, i) => i !== index))
+  }
+
+  function addSetToExercise(exIdx) {
+    const updated = [...workout]
+    updated[exIdx].sets.push({ weight: '', reps: '' })
+    setWorkout(updated)
+  }
+
+  function removeSetFromExercise(exIdx) {
+    const updated = [...workout]
+    if (updated[exIdx].sets.length > 1) {
+      updated[exIdx].sets.pop()
+      setWorkout(updated)
+    }
+  }
   function clearWorkout() { setWorkout([]) }
 
   function saveWorkout() {
@@ -411,7 +466,6 @@ function App() {
 
               <div className="workout-actions-row">
                 <button className="clear-btn" onClick={clearWorkout}>Clear All</button>
-                <button className="save-btn" onClick={saveWorkout}>Save Workout</button>
               </div>
 
               <div className="workout-log">
@@ -433,21 +487,33 @@ function App() {
                         </div>
 
                         <div className="set-grid">
-                          <div className="set-grid-header">
-                            <span className="sg-corner">SET</span>
-                            <span className="sg-col-label">{unitLabel}</span>
-                            <span className="sg-col-label">REPS</span>
+                      <div className="set-grid-header">
+                        <span className="sg-corner">SET</span>
+                        <span className="sg-col-label">{unitLabel}</span>
+                        <span className="sg-col-label">REPS</span>
+                      </div>
+                      {entry.sets.map((s, j) => {
+                        const currentLoad = (Number(s.weight) || 0) * (Number(s.reps) || 0)
+                        const pr = getExercisePR(entry.name, pastWorkouts)
+                        const isPR = currentLoad > 0 && pr > 0 && currentLoad > pr
+                        return (
+                          <div key={j} className={`set-row ${s.reps !== '' && s.reps !== '0' ? 'filled' : ''} ${isPR ? 'pr' : ''}`}>
+                            <span className="set-num">{j + 1}</span>
+                            <input type="number" min="0" placeholder="—" value={s.weight}
+                              onChange={(e) => updateSet(i, j, 'weight', e.target.value)} />
+                            <input type="number" min="0" placeholder="—" value={s.reps}
+                              onChange={(e) => updateSet(i, j, 'reps', e.target.value)} />
+                            {isPR && <span className="pr-badge">PR</span>}
                           </div>
-                          {entry.sets.map((s, j) => (
-                            <div key={j} className={`set-row ${s.reps !== '' && s.reps !== '0' ? 'filled' : ''}`}>
-                              <span className="set-num">{j + 1}</span>
-                              <input type="number" min="0" placeholder="—" value={s.weight}
-                                onChange={(e) => updateSet(i, j, 'weight', e.target.value)} />
-                              <input type="number" min="0" placeholder="—" value={s.reps}
-                                onChange={(e) => updateSet(i, j, 'reps', e.target.value)} />
-                            </div>
-                          ))}
-                        </div>
+                        )
+                      })}
+                      <div className="set-controls">
+                        <button className="set-ctrl-btn" onClick={() => removeSetFromExercise(i)}
+                          disabled={entry.sets.length <= 1}>−</button>
+                        <span className="set-ctrl-label">{entry.sets.length} {entry.sets.length === 1 ? 'set' : 'sets'}</span>
+                        <button className="set-ctrl-btn" onClick={() => addSetToExercise(i)}>+</button>
+                      </div>
+                    </div>
 
                         <textarea className="notes-input" placeholder="Notes — how did it feel?"
                           value={entry.notes} onChange={(e) => updateNotes(i, e.target.value)} rows={2} />
@@ -456,14 +522,15 @@ function App() {
                   )
                 })}
               </div>
+              <button className="save-workout-btn" onClick={saveWorkout}>Save Workout</button>
             </div>
           )}
 
           {workout.length === 0 && !pickerOpen && !templatePickerOpen && (
             <div className="empty-state">
-              <div className="empty-icon-wrap">
+              <button className="empty-icon-wrap" onClick={() => setPickerOpen(true)}>
                 <span className="empty-plus">+</span>
-              </div>
+              </button>
               <p className="empty-text">Add an exercise or load a template</p>
               <p className="empty-sub">Your workout starts here</p>
             </div>
