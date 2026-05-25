@@ -234,6 +234,16 @@ function selectExercise(name) {
     setWorkout(workout.filter((_, i) => i !== index))
   }
 
+  function reorderExercise(index, direction) {
+    const newIdx = index + direction
+    if (newIdx < 0 || newIdx >= workout.length) return
+    const updated = [...workout]
+    const temp = updated[index]
+    updated[index] = updated[newIdx]
+    updated[newIdx] = temp
+    setWorkout(updated)
+  }
+
   function addSetToExercise(exIdx) {
     const updated = [...workout]
     updated[exIdx].sets.push({ weight: '', reps: '' })
@@ -475,8 +485,12 @@ function selectExercise(name) {
                     <div key={i} className="exercise-card" style={{ animationDelay: `${i * 0.06}s` }}>
                       <div className="card-accent" style={{ height: `${Math.max(completion * 100, 2)}%` }} />
                       <div className="card-inner">
-                        <div className="card-header">
+                         <div className="card-header">
                           <div className="card-title-group">
+                            <div className="card-reorder">
+                              <button className="reorder-btn" onClick={() => reorderExercise(i, -1)} disabled={i === 0}>↑</button>
+                              <button className="reorder-btn" onClick={() => reorderExercise(i, 1)} disabled={i === workout.length - 1}>↓</button>
+                            </div>
                             <span className="card-num">{String(i + 1).padStart(2, '0')}</span>
                             <h2>{entry.name}</h2>
                           </div>
