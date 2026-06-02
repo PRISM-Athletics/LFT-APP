@@ -68,6 +68,16 @@ function getLastWeights(exerciseName, pastWorkouts) {
   return null
 }
 
+function getLastReps(exerciseName, pastWorkouts) {
+  for (const w of pastWorkouts) {
+    const match = w.exercises.find((ex) => ex.name === exerciseName)
+    if (match && match.sets) {
+      return match.sets.map((s) => s.reps || '')
+    }
+  }
+  return null
+}
+
 function getExercisePR(exerciseName, pastWorkouts) {
   let best = 0
   for (const w of pastWorkouts) {
@@ -80,6 +90,22 @@ function getExercisePR(exerciseName, pastWorkouts) {
     }
   }
   return best
+}
+
+function getBestReps(exerciseName, weight, pastWorkouts) {
+  if (!weight || Number(weight) <= 0) return null
+  let best = 0
+  for (const w of pastWorkouts) {
+    const match = w.exercises.find((ex) => ex.name === exerciseName)
+    if (match && match.sets) {
+      for (const s of match.sets) {
+        if (Number(s.weight) === Number(weight) && Number(s.reps) > best) {
+          best = Number(s.reps)
+        }
+      }
+    }
+  }
+  return best > 0 ? best : null
 }
 
 function App() {
@@ -193,11 +219,13 @@ function App() {
   const tplFiltered = filterExercises(tplSearch, tplGroup)
   const tplGroupedFiltered = groupResults(tplFiltered, false)
 
-function selectExercise(name) {
+  function selectExercise(name) {
     const prevWeights = getLastWeights(name, pastWorkouts)
+    const prevReps = getLastReps(name, pastWorkouts)
     const newSets = Array.from({ length: sets }, (_, i) => ({
       weight: prevWeights && prevWeights[i] !== undefined ? prevWeights[i] : '',
       reps: '',
+      prevReps: prevReps && prevReps[i] !== undefined ? prevReps[i] : '',
     }))
     setWorkout([...workout, { name, sets: newSets, notes: '' }])
     closePicker()
@@ -209,11 +237,13 @@ function selectExercise(name) {
  function loadTemplate(template) {
     const exercises = template.exercises.map((ex) => {
       const prevWeights = getLastWeights(ex.name, pastWorkouts)
+      const prevReps = getLastReps(ex.name, pastWorkouts)
       return {
         name: ex.name,
         sets: Array.from({ length: ex.sets }, (_, i) => ({
           weight: prevWeights && prevWeights[i] !== undefined ? prevWeights[i] : '',
           reps: '',
+          prevReps: prevReps && prevReps[i] !== undefined ? prevReps[i] : '',
         })),
         notes: '',
       }
@@ -500,24 +530,29 @@ function selectExercise(name) {
                           </div>
                         </div>
 
-                        <div className="set-grid">
+                       <div className="set-grid">
                       <div className="set-grid-header">
                         <span className="sg-corner">SET</span>
                         <span className="sg-col-label">{unitLabel}</span>
                         <span className="sg-col-label">REPS</span>
+                        <span className="sg-col-label">PR</span>
                       </div>
-                      {entry.sets.map((s, j) => {
+                    {entry.sets.map((s, j) => {
                         const currentLoad = (Number(s.weight) || 0) * (Number(s.reps) || 0)
                         const pr = getExercisePR(entry.name, pastWorkouts)
                         const isPR = currentLoad > 0 && pr > 0 && currentLoad > pr
+                        const bestReps = getBestReps(entry.name, s.weight, pastWorkouts)
+                        const repPlaceholder = s.prevReps ? String(s.prevReps) : '—'
                         return (
                           <div key={j} className={`set-row ${s.reps !== '' && s.reps !== '0' ? 'filled' : ''} ${isPR ? 'pr' : ''}`}>
                             <span className="set-num">{j + 1}</span>
                             <input type="number" min="0" placeholder="—" value={s.weight}
                               onChange={(e) => updateSet(i, j, 'weight', e.target.value)} />
-                            <input type="number" min="0" placeholder="—" value={s.reps}
+                            <input type="number" min="0" placeholder={repPlaceholder} value={s.reps}
                               onChange={(e) => updateSet(i, j, 'reps', e.target.value)} />
-                            {isPR && <span className="pr-badge">PR</span>}
+                            <span className={`pr-col ${isPR ? 'is-pr' : ''}`}>
+                              {isPR ? 'PR' : bestReps ? bestReps : '–'}
+                            </span>
                           </div>
                         )
                       })}
